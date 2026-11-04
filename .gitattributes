@@ -1,0 +1,2 @@
+news_archive_db/chroma.sqlite3 filter=lfs diff=lfs merge=lfs -text
+news_archive_db/**/*.bin filter=lfs diff=lfs merge=lfs -text

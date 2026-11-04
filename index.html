@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsByte</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Lora:wght@400;500;600&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; scroll-behavior: smooth; }
+        body { background-color: #f4ebd8; background-image: url('https://www.transparenttextures.com/patterns/cream-paper.png'); color: #2b2620; font-family: 'Lora', serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 0 20px 40px 20px; overflow-x: hidden; }
+
+        .masthead { text-align: center; width: 100%; max-width: 1600px; padding: 30px 0 15px 0; border-bottom: 2px solid #2b2620; }
+        .masthead h1 { font-family: 'Playfair Display', serif; font-size: 3.8rem; font-weight: 800; letter-spacing: -1px; text-transform: uppercase; color: #1a1612; margin: 0; }
+        .masthead p { font-size: 0.85rem; font-style: italic; text-transform: uppercase; letter-spacing: 2px; color: #5c5246; margin-top: 5px; }
+
+        .top-nav { display: flex; gap: 20px; justify-content: center; width: 100%; max-width: 1600px; padding: 10px 0; border-bottom: 4px double #2b2620; margin-bottom: 30px; position: sticky; top: 0; background: rgba(244, 235, 216, 0.95); z-index: 100; backdrop-filter: blur(5px); }
+        .top-nav a { color: #1a1612; text-decoration: none; font-family: 'Playfair Display', serif; font-weight: 800; text-transform: uppercase; font-size: 0.9rem; padding: 5px 10px; border: 1px solid transparent; transition: all 0.2s; }
+        .top-nav a:hover { border-color: #1a1612; background: #eae1cd; }
+
+        .dashboard-container, .debate-container { display: grid; gap: 24px; width: 100%; max-width: 1600px; margin-bottom: 40px; scroll-margin-top: 80px; }
+        .dashboard-container { grid-template-columns: 1fr 1fr 1.2fr; min-height: 75vh; }
+        .debate-container { grid-template-columns: 1fr 2fr; min-height: 60vh; }
+        
+        .panel { background: #fdfbf7; border: 1px solid #d4c8b8; border-top: 5px solid #2b2620; border-radius: 4px; display: flex; flex-direction: column; overflow: hidden; position: relative; box-shadow: 2px 4px 15px rgba(43, 38, 32, 0.08); }
+        .panel-header { padding: 12px 18px; background: #eae1cd; border-bottom: 1px solid #d4c8b8; display: flex; align-items: center; justify-content: space-between; }
+        .panel-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 800; text-transform: uppercase; color: #1a1612; }
+        .panel-badge { font-size: 0.65rem; font-family: sans-serif; letter-spacing: 1px; color: #fdfbf7; background: #5c5246; padding: 4px 8px; border-radius: 2px; text-transform: uppercase; font-weight: bold; }
+        
+        .control-bar { display: flex; flex-wrap: wrap; padding: 12px; background: #fdfbf7; border-bottom: 1px solid #d4c8b8; gap: 8px; }
+        input[type="text"], input[type="number"], select { padding: 8px 10px; border-radius: 2px; border: 1px solid #b8a994; background: #ffffff; color: #2b2620; outline: none; font-family: 'Lora', serif; font-size: 0.85rem; }
+        button { padding: 8px 14px; background: #2b2620; color: #fdfbf7; border: 1px solid #1a1612; border-radius: 2px; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 0.8rem; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; text-transform: uppercase; }
+        button:hover { background: #4a4238; }
+
+        .panel-body { flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+        .panel-body::-webkit-scrollbar { width: 6px; }
+        .panel-body::-webkit-scrollbar-thumb { background: #d4c8b8; border-radius: 4px; }
+
+        .article-card { background: #ffffff; border: 1px solid #d4c8b8; border-left: 4px solid #8c7a61; padding: 14px; cursor: grab; position: relative; display: flex; flex-direction: column; gap: 6px; box-shadow: 1px 2px 5px rgba(0,0,0,0.03); }
+        .article-source { font-size: 0.72rem; color: #5c5246; font-family: sans-serif; font-weight: bold; text-transform: uppercase; display: flex; justify-content: space-between; border-bottom: 1px solid #eae1cd; padding-bottom: 4px;}
+        .article-title { font-size: 1rem; font-family: 'Playfair Display', serif; font-weight: 800; color: #1a1612; line-height: 1.3; }
+        .article-snippet { font-size: 0.85rem; color: #4a4238; line-height: 1.5; }
+        
+        .card-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+        .read-btn, .action-btn { padding: 5px 8px; font-size: 0.7rem; font-family: sans-serif; text-transform: uppercase; font-weight: bold; text-decoration: none; border-radius: 2px; transition: all 0.2s; cursor: pointer; border: 1px solid #d4c8b8; background: #eae1cd; color: #2b2620; }
+        .read-btn:hover, .action-btn:hover { background: #d4c8b8; }
+        .note-btn { background: #5c5246; color: #fdfbf7; border: 1px solid #2b2620; }
+        .note-btn:hover { background: #2b2620; }
+        .return-btn { background: #8c7a61; color: #ffffff; border: 1px solid #5c5246; }
+
+        .drop-zone { border: 2px dashed #b8a994; background: #faf6ef; min-height: 180px; display: flex; flex-direction: column; gap: 12px; padding: 8px; flex: 1; }
+        .drop-zone.drag-over { border-color: #5c5246; background: #eae1cd; }
+        .drop-placeholder { margin: auto; color: #8c7a61; font-style: italic; text-align: center; padding: 20px; pointer-events: none; }
+        
+        .notes-section { background: #ffffff; border: 1px solid #d4c8b8; border-top: 3px solid #8c7a61; padding: 12px; margin-top: 10px; border-radius: 2px; }
+        .notes-header { font-family: 'Playfair Display', serif; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; color: #1a1612; display: flex; justify-content: space-between; border-bottom: 1px dashed #d4c8b8; padding-bottom: 4px; }
+        .notes-list { list-style-type: square; padding-left: 20px; font-size: 0.85rem; color: #2b2620; max-height: 150px; overflow-y: auto; }
+
+        .message { max-width: 92%; padding: 14px; border-radius: 4px; line-height: 1.6; font-size: 0.9rem; word-wrap: break-word; border: 1px solid #d4c8b8; }
+        .user-message { align-self: flex-end; background: #e3d9c6; color: #1a1612; font-family: 'Lora', serif; font-style: italic; }
+        .bot-message { align-self: flex-start; background: #ffffff; color: #2b2620; box-shadow: 1px 2px 8px rgba(0,0,0,0.05); }
+        .bot-message h1, .bot-message h2, .bot-message h3 { font-family: 'Playfair Display', serif; color: #1a1612; margin-top: 10px; margin-bottom: 6px; border-bottom: 1px solid #eae1cd; padding-bottom: 2px; }
+        .sys-tag { color: #5c5246; font-family: sans-serif; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 6px; }
+        .chat-input-area { display: flex; padding: 12px; background: #eae1cd; border-top: 1px solid #d4c8b8; gap: 8px; }
+
+        .section-divider { width: 100%; max-width: 1600px; text-align: center; border-bottom: 2px solid #2b2620; line-height: 0.1em; margin: 40px 0 30px 0; font-family: 'Playfair Display', serif; font-weight: 800; scroll-margin-top: 80px; }
+        .section-divider span { background:#f4ebd8; padding:0 15px; font-size: 1.6rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .debate-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; height: 100%; }
+        .motion-column { background: #fdfbf7; border: 1px solid #d4c8b8; display: flex; flex-direction: column; overflow: hidden; border-radius: 4px; }
+        .motion-header-for { background: #d4edda; color: #155724; padding: 10px 14px; font-family: 'Playfair Display', serif; font-weight: bold; border-bottom: 1px solid #c3e6cb; text-transform: uppercase; font-size: 0.95rem; }
+        .motion-header-against { background: #f8d7da; color: #721c24; padding: 10px 14px; font-family: 'Playfair Display', serif; font-weight: bold; border-bottom: 1px solid #f5c6cb; text-transform: uppercase; font-size: 0.95rem; }
+        .load-more-btn { background: #eae1cd; color: #5c5246; border: 1px dashed #b8a994; width: 100%; margin-top: 10px; font-size: 0.75rem; }
+        .load-more-btn:hover { background: #d4c8b8; color: #1a1612; }
+
+        /* --- V. READING ROOM (NEWSPAPER) STYLES --- */
+        #readingRoomWrapper { background: #2b2620; width: 100%; max-width: 1600px; height: 85vh; border-radius: 4px; display: flex; flex-direction: column; position: relative; overflow: hidden; margin-bottom: 40px; }
+        #readingRoomWrapper:-webkit-full-screen { width: 100vw; height: 100vh; border-radius: 0; max-width: none; margin-bottom: 0; }
+        #readingRoomWrapper:fullscreen { width: 100vw; height: 100vh; border-radius: 0; max-width: none; margin-bottom: 0; }
+        
+        .rr-header { display: flex; justify-content: space-between; padding: 15px 25px; background: #1a1612; color: #eae1cd; align-items: center; }
+        .rr-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;}
+        .rr-controls button { background: #eae1cd; color: #1a1612; font-size: 0.75rem; margin-left: 10px; border-radius: 2px; }
+        .rr-controls button:hover { background: #fdfbf7; }
+
+        .newspaper-container { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #3d3730; overflow: hidden; padding: 20px; }
+        
+        .spread { display: none; width: 100%; max-width: 1300px; height: 100%; gap: 2px; animation: fadeIn 0.5s ease; }
+        .spread.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        
+        .np-page { background: #fdfbf7; background-image: url('https://www.transparenttextures.com/patterns/cream-paper.png'); flex: 1; padding: 35px; box-shadow: inset 0 0 30px rgba(0,0,0,0.05), 0 10px 20px rgba(0,0,0,0.3); overflow-y: auto; border: 1px solid #d4c8b8; }
+        .np-page::-webkit-scrollbar { width: 4px; }
+        .np-page::-webkit-scrollbar-thumb { background: #b8a994; }
+
+        .np-cover { text-align: center; border-bottom: 2px solid #1a1612; padding-bottom: 20px; margin-bottom: 25px; }
+        .np-cover h1 { font-family: 'Playfair Display', serif; font-size: 4.8rem; text-transform: uppercase; margin-bottom: 10px; letter-spacing: -2px; }
+        .np-section-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-style: italic; border-bottom: 1px solid #2b2620; margin-bottom: 25px; padding-bottom: 5px; text-transform: capitalize; }
+        
+        .np-article { margin-bottom: 30px; }
+        .np-article h2 { font-family: 'Playfair Display', serif; font-size: 1.45rem; margin-bottom: 12px; line-height: 1.25; font-weight: 800; color: #1a1612; }
+        .np-article p { font-size: 0.95rem; line-height: 1.7; color: #3a3228; text-align: justify; }
+        .np-meta { font-family: sans-serif; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: #8c7a61; margin-bottom: 6px; }
+        
+        .spread-cover .left-page { visibility: hidden; }
+        .spread-back .right-page { visibility: hidden; }
+        
+        .np-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); font-size: 2rem; background: rgba(26, 22, 18, 0.7); color: white; border: none; padding: 20px 10px; cursor: pointer; z-index: 10; border-radius: 4px;}
+        .np-nav-btn:hover { background: #1a1612; }
+        #prevPageBtn { left: 10px; }
+        #nextPageBtn { right: 10px; }
+
+        /* --- VI. LIVE MARKETS STYLES --- */
+        .market-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; width: 100%; max-width: 1600px; margin-bottom: 40px; scroll-margin-top: 80px; }
+        .market-col { background: #fdfbf7; border: 1px solid #d4c8b8; border-top: 5px solid #2b2620; border-radius: 4px; padding: 15px; box-shadow: 2px 4px 15px rgba(43, 38, 32, 0.08); }
+        .market-header { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 800; text-transform: uppercase; color: #1a1612; border-bottom: 2px solid #eae1cd; padding-bottom: 10px; margin-bottom: 15px; text-align: center; }
+        
+        .ticker-card { background: #ffffff; border: 1px solid #eae1cd; padding: 12px 15px; border-radius: 2px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-left: 4px solid #1a1612; transition: all 0.2s; }
+        .ticker-card:hover { border-color: #d4c8b8; transform: translateY(-1px); }
+        .ticker-info { display: flex; flex-direction: column; gap: 4px; }
+        .ticker-symbol { font-family: 'Playfair Display', serif; font-weight: 800; color: #1a1612; font-size: 1rem; }
+        .ticker-price { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 1.1rem; color: #2b2620; }
+        .ticker-badge { padding: 3px 8px; border-radius: 2px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 600; }
+        .ticker-up { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .ticker-down { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+
+    <header class="masthead">
+        <h1>NewsByte</h1>
+        <p>The Premier Digital Archive</p>
+    </header>
+
+    <nav class="top-nav">
+        <a href="#global-wire-section">I. Global Wire</a>
+        <a href="#debate-section">II. Debate Room</a>
+        <a href="#reading-room-section">III. Reading Room</a>
+        <a href="#market-section">IV. Finance Desk</a>
+    </nav>
+
+    <div class="dashboard-container" id="global-wire-section">
+        <!-- COLUMN 1: Global Wire -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">I. Global Wire</div>
+                <div class="panel-badge">Live Feed</div>
+            </div>
+            <div class="control-bar">
+                <input type="text" id="newsKeyword" placeholder="Search topic..." style="flex: 2;" onkeydown="if(event.key === 'Enter') { globalPage = 1; fetchArticles(); }">
+                <input type="number" id="startYear" placeholder="From" style="width: 70px;">
+                <input type="number" id="endYear" placeholder="To" style="width: 70px;">
+                <button onclick="globalPage = 1; fetchArticles()">Fetch</button>
+            </div>
+            <div class="panel-body" id="articleFeed">
+                <div class="drop-placeholder">Awaiting search query...</div>
+            </div>
+        </div>
+
+        <!-- COLUMN 2: Editor's Desk -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">II. Editor's Desk</div>
+                <div class="panel-badge" id="selectedCount">0 Clipped</div>
+            </div>
+            <div class="panel-body">
+                <div class="drop-zone" id="selectedArticlesZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                    <div class="drop-placeholder" id="selectedPlaceholder">Drag clippings here to build context.</div>
+                </div>
+                <div class="notes-section">
+                    <div class="notes-header">
+                        <span>📝 Research Notebook</span>
+                        <button onclick="clearNotes()" style="padding:2px 6px; font-size:0.65rem;">Clear</button>
+                    </div>
+                    <ul class="notes-list" id="notesList">
+                        <li><em>No notes added yet.</em></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMN 3: AI Chatbot -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">III. Synthesis Engine</div>
+                <div class="panel-badge">Gemma 4</div>
+            </div>
+            <div class="panel-body" id="messages">
+                <div class="message bot-message">
+                    <span class="sys-tag">System Ready</span>
+                    NewsByte terminal online. Query the synthesis engine.
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <select id="chatMode">
+                    <option value="selected">Clipped Desk</option>
+                    <option value="global">Global Archive</option>
+                </select>
+                <input type="text" id="userInput" placeholder="Ask for insights..." style="flex: 1;" onkeydown="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEBATE SECTION -->
+    <div class="section-divider" id="debate-section">
+        <span>IV. Debate & Perspective Room</span>
+    </div>
+
+    <div class="debate-container">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Motion Controls</div>
+                <div class="panel-badge">Perspective Engine</div>
+            </div>
+            <div class="control-bar" style="flex-direction: column; gap: 12px; padding: 18px;">
+                <label style="font-size: 0.85rem; font-weight: bold;">Debate Topic / Motion:</label>
+                <input type="text" id="debateKeyword" placeholder="e.g. Universal Basic Income..." onkeydown="if(event.key === 'Enter') { debatePage = 1; fetchDebateArticles(); }">
+                <button onclick="debatePage = 1; fetchDebateArticles()" style="margin-top: 12px; padding: 12px;">Scan Perspectives</button>
+            </div>
+        </div>
+
+        <div class="debate-columns">
+            <div class="motion-column">
+                <div class="motion-header-for">▲ FOR THE MOTION (PRO)</div>
+                <div class="panel-body" id="debateForFeed">
+                    <div class="drop-placeholder">Awaiting debate scan...</div>
+                </div>
+            </div>
+            <div class="motion-column">
+                <div class="motion-header-against">▼ AGAINST THE MOTION (CONTRA)</div>
+                <div class="panel-body" id="debateAgainstFeed">
+                    <div class="drop-placeholder">Awaiting debate scan...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- V. READING ROOM SECTION -->
+    <div class="section-divider" id="reading-room-section">
+        <span>V. The Reading Room</span>
+    </div>
+    
+    <div id="readingRoomWrapper">
+        <div class="rr-header">
+            <div class="rr-title">Today's Edition</div>
+            <div class="rr-controls">
+                <button onclick="fetchDailyEdition()">Refresh Edition</button>
+                <button onclick="toggleFullscreen()">Toggle Fullscreen ⛶</button>
+            </div>
+        </div>
+        
+        <div class="newspaper-container">
+            <button class="np-nav-btn" id="prevPageBtn" onclick="turnPage(-1)" style="display:none;">&#10094;</button>
+            <button class="np-nav-btn" id="nextPageBtn" onclick="turnPage(1)" style="display:none;">&#10095;</button>
+            
+            <div id="bookViewer" style="width: 100%; height: 100%;">
+                <div class="drop-placeholder" style="color: #eae1cd; margin-top: 100px;">Click "Refresh Edition" to load today's paper.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VI. LIVE MARKETS SECTION -->
+    <div class="section-divider" id="market-section">
+        <span>VI. Live Finance Desk</span>
+    </div>
+
+    <div class="market-container" id="marketFeed">
+        <div class="market-col"><div class="drop-placeholder">Loading Markets...</div></div>
+        <div class="market-col"><div class="drop-placeholder">Loading Markets...</div></div>
+        <div class="market-col"><div class="drop-placeholder">Loading Markets...</div></div>
+    </div>
+
+    <script>
+        window.onload = () => { fetchMarketData(); };
+
+        let isNotesEmpty = true;
+        let globalPage = 1;
+        let debatePage = 1;
+        let currentSpread = 0;
+        let totalSpreads = 4;
+
+        // --- GLOBAL WIRE LOGIC ---
+        async function fetchArticles(append = false) {
+            const keyword = document.getElementById('newsKeyword').value.trim();
+            const startYear = document.getElementById('startYear').value.trim();
+            const endYear = document.getElementById('endYear').value.trim();
+            const feed = document.getElementById('articleFeed');
+            
+            if (!keyword && !startYear) return;
+            if (!append) feed.innerHTML = `<div class="drop-placeholder"><span class="sys-tag">Telegraphing</span> Searching the wire...</div>`;
+
+            try {
+                const response = await fetch('/search_news', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: keyword, start_year: startYear, end_year: endYear, page: globalPage })
+                });
+                const data = await response.json();
+                renderArticles(data.articles, feed, false, "NEUTRAL", append);
+                
+                if (data.articles.length > 0) {
+                    const btn = document.createElement('button');
+                    btn.className = 'load-more-btn';
+                    btn.innerText = 'Load More Articles ↓';
+                    btn.onclick = () => { globalPage++; fetchArticles(true); btn.remove(); };
+                    feed.appendChild(btn);
+                }
+            } catch (err) {
+                if (!append) feed.innerHTML = `<div class="drop-placeholder" style="color: #8b0000;">Connection lost.</div>`;
+            }
+        }
+
+        // --- DEBATE ROOM LOGIC ---
+        async function fetchDebateArticles(append = false) {
+            const keyword = document.getElementById('debateKeyword').value.trim();
+            const forFeed = document.getElementById('debateForFeed');
+            const againstFeed = document.getElementById('debateAgainstFeed');
+
+            if (!keyword) return;
+            if (!append) {
+                forFeed.innerHTML = `<div class="drop-placeholder"><span class="sys-tag">Scanning</span> Loading supporting news...</div>`;
+                againstFeed.innerHTML = `<div class="drop-placeholder"><span class="sys-tag">Scanning</span> Loading opposing news...</div>`;
+            }
+
+            try {
+                const response = await fetch('/search_debate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: keyword, page: debatePage })
+                });
+                const data = await response.json();
+
+                renderArticles(data.for_articles, forFeed, true, "FOR THE MOTION", append);
+                renderArticles(data.against_articles, againstFeed, true, "AGAINST THE MOTION", append);
+
+                if (data.for_articles.length > 0) {
+                    const btnFor = document.createElement('button');
+                    btnFor.className = 'load-more-btn';
+                    btnFor.innerText = 'Load More Perspectives ↓';
+                    btnFor.onclick = () => { debatePage++; fetchDebateArticles(true); btnFor.remove();};
+                    forFeed.appendChild(btnFor);
+                }
+                if (data.against_articles.length > 0) {
+                    const btnAgainst = document.createElement('button');
+                    btnAgainst.className = 'load-more-btn';
+                    btnAgainst.innerText = 'Load More Perspectives ↓';
+                    btnAgainst.onclick = () => { debatePage++; fetchDebateArticles(true); btnAgainst.remove();};
+                    againstFeed.appendChild(btnAgainst);
+                }
+            } catch (err) {
+                if(!append) forFeed.innerHTML = `<div class="drop-placeholder" style="color: #8b0000;">Error.</div>`;
+            }
+        }
+
+        function renderArticles(articles, container, isDebate = false, stance = "NEUTRAL", append = false) {
+            if (!append) container.innerHTML = '';
+            if (!articles || articles.length === 0 && !append) { container.innerHTML = `<div class="drop-placeholder">No articles found.</div>`; return; }
+            articles.forEach(art => { container.appendChild(createArticleCard(art, false, isDebate, stance)); });
+        }
+
+        function createArticleCard(art, isSelectedZone = false, isDebate = false, stance = "NEUTRAL") {
+            const card = document.createElement('div');
+            card.className = 'article-card';
+            card.id = 'art_' + Math.random().toString(36).substr(2, 9);
+            card.draggable = true;
+            card.ondragstart = handleDragStart;
+
+            card.dataset.title = art.title;
+            card.dataset.url = art.url;
+            card.dataset.snippet = art.snippet;
+            card.dataset.source = art.source;
+            card.dataset.stance = stance; 
+
+            let actionButtons = `<a href="${art.url}" target="_blank" class="read-btn">Read Source</a>`;
+            if (isSelectedZone || isDebate) { actionButtons += `<button class="action-btn note-btn" onclick="addToNotes(this)">+ Add to Notes</button>`; }
+            if (isSelectedZone) { actionButtons += `<button class="action-btn return-btn" onclick="returnToFeed(this)">Return to Feed ↩</button>`; }
+
+            card.innerHTML = `
+                <div class="article-source">
+                    <span>${art.source}</span>
+                    <span style="color:#8c7a61">${stance !== "NEUTRAL" ? '['+stance+']' : ''}</span>
+                </div>
+                <div class="article-title">${art.title}</div>
+                <div class="article-snippet">${art.snippet}</div>
+                <div class="card-actions">${actionButtons}</div>
+            `;
+            return card;
+        }
+
+        function addToNotes(btnElement) {
+            const card = btnElement.closest('.article-card');
+            const notesList = document.getElementById('notesList');
+            if (isNotesEmpty) { notesList.innerHTML = ''; isNotesEmpty = false; }
+            const li = document.createElement('li');
+            li.innerHTML = `<strong>${card.dataset.title}</strong> — <em>[${card.dataset.source}]</em>`;
+            notesList.appendChild(li);
+        }
+
+        function clearNotes() {
+            document.getElementById('notesList').innerHTML = '<li><em>No notes added yet.</em></li>';
+            isNotesEmpty = true;
+        }
+
+        function returnToFeed(btnElement) {
+            const card = btnElement.closest('.article-card');
+            const feed = document.getElementById('articleFeed');
+            card.querySelector('.card-actions').innerHTML = `<a href="${card.dataset.url}" target="_blank" class="read-btn">Read Source</a>`;
+            feed.appendChild(card);
+            updateSelectedCount();
+        }
+
+        function handleDragStart(e) { e.dataTransfer.setData('text/plain', e.target.id); e.dataTransfer.effectAllowed = 'move'; }
+        function handleDragOver(e) { e.preventDefault(); document.getElementById('selectedArticlesZone').classList.add('drag-over'); }
+        function handleDragLeave(e) { document.getElementById('selectedArticlesZone').classList.remove('drag-over'); }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('selectedArticlesZone').classList.remove('drag-over');
+            const draggedElement = document.getElementById(e.dataTransfer.getData('text/plain'));
+            if (draggedElement) {
+                document.getElementById('selectedArticlesZone').appendChild(draggedElement);
+                let actionsDiv = draggedElement.querySelector('.card-actions');
+                if (!actionsDiv.querySelector('.note-btn')) {
+                    const noteBtn = document.createElement('button'); noteBtn.className = 'action-btn note-btn'; noteBtn.innerText = '+ Add to Notes'; noteBtn.onclick = function() { addToNotes(noteBtn); }; actionsDiv.appendChild(noteBtn);
+                }
+                if (!actionsDiv.querySelector('.return-btn')) {
+                    const returnBtn = document.createElement('button'); returnBtn.className = 'action-btn return-btn'; returnBtn.innerText = 'Return to Feed ↩'; returnBtn.onclick = function() { returnToFeed(returnBtn); }; actionsDiv.appendChild(returnBtn);
+                }
+                updateSelectedCount();
+            }
+        }
+
+        function updateSelectedCount() {
+            const cards = document.querySelectorAll('#selectedArticlesZone .article-card');
+            document.getElementById('selectedPlaceholder').style.display = cards.length > 0 ? 'none' : 'block';
+            document.getElementById('selectedCount').textContent = `${cards.length} Clipped`;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            const messagesDiv = document.getElementById('messages');
+            const userBubble = document.createElement('div');
+            userBubble.className = 'message user-message';
+            userBubble.textContent = `"${prompt}"`;
+            messagesDiv.appendChild(userBubble);
+            input.value = '';
+            
+            let selectedContext = "";
+            document.querySelectorAll('#selectedArticlesZone .article-card').forEach(card => {
+                const stance = card.dataset.stance !== "NEUTRAL" ? `[Stance: ${card.dataset.stance}] ` : "";
+                selectedContext += `${stance}[Title: ${card.dataset.title}] Content: ${card.dataset.snippet}\n\n`;
+            });
+
+            const loadingBubble = document.createElement('div');
+            loadingBubble.className = 'message bot-message';
+            loadingBubble.innerHTML = `<span class="sys-tag">Typing...</span> Compiling report...`;
+            messagesDiv.appendChild(loadingBubble);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt, context: selectedContext, mode: document.getElementById('chatMode').value })
+                });
+                const data = await response.json();
+                loadingBubble.innerHTML = `<span class="sys-tag">Report Delivered</span>` + marked.parse(data.response);
+            } catch (err) {
+                loadingBubble.innerHTML = `<span class="sys-tag">Error</span> Press room unreachable.`;
+            }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // --- V. READING ROOM (NEWSPAPER) LOGIC ---
+        function toggleFullscreen() {
+            const rr = document.getElementById('readingRoomWrapper');
+            if (!document.fullscreenElement) {
+                rr.requestFullscreen().catch(err => console.log(err));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function formatNewspaperSection(title, articles) {
+            let html = `<h2 class="np-section-title">${title}</h2>`;
+            articles.forEach(art => {
+                let text = art.snippet;
+                if(text.length > 550) text = text.substring(0, 550) + '...';
+                
+                html += `
+                    <div class="np-article">
+                        <div class="np-meta">${art.source} &nbsp;|&nbsp; ${art.date}</div>
+                        <h2><a href="${art.url}" target="_blank" style="color:inherit; text-decoration:none;">${art.title}</a></h2>
+                        <p>${text}</p>
+                    </div>`;
+            });
+            return html;
+        }
+
+        async function fetchDailyEdition() {
+            const viewer = document.getElementById('bookViewer');
+            viewer.innerHTML = `<div class="drop-placeholder" style="color: #eae1cd; margin-top: 100px;"><span class="sys-tag" style="color:#eae1cd">Printing...</span> Gathering fresh global headlines. Please wait.</div>`;
+            
+            try {
+                const response = await fetch('/daily_edition');
+                const data = await response.json();
+                
+                const dateString = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+                const world1 = data.international.slice(0,3);
+                const world2 = data.international.slice(3,6);
+                const nat1 = data.national.slice(0,3);
+                const nat2 = data.national.slice(3,6);
+                const fin1 = data.financial.slice(0,3);
+                const fin2 = data.financial.slice(3,6);
+                const sport1 = data.sports.slice(0,3);
+                
+                viewer.innerHTML = `
+                    <!-- SPREAD 0: Cover (World 1) -->
+                    <div class="spread spread-cover active" id="spread-0">
+                        <div class="np-page left-page"></div>
+                        <div class="np-page right-page">
+                            <div class="np-cover">
+                                <h1>NewsByte</h1>
+                                <p style="font-family:sans-serif; text-transform:uppercase; font-size:0.8rem; letter-spacing:2px; border-top:1px solid #1a1612; border-bottom:1px solid #1a1612; padding:5px 0;">The World's Digital Archive &nbsp;|&nbsp; ${dateString}</p>
+                            </div>
+                            ${formatNewspaperSection("World News", world1)}
+                        </div>
+                    </div>
+                    
+                    <!-- SPREAD 1: World 2 & National 1 -->
+                    <div class="spread" id="spread-1">
+                        <div class="np-page left-page">${formatNewspaperSection("World News - Continued", world2)}</div>
+                        <div class="np-page right-page">${formatNewspaperSection("National Affairs", nat1)}</div>
+                    </div>
+
+                    <!-- SPREAD 2: National 2 & Finance 1 -->
+                    <div class="spread" id="spread-2">
+                        <div class="np-page left-page">${formatNewspaperSection("National Affairs - Continued", nat2)}</div>
+                        <div class="np-page right-page">${formatNewspaperSection("Financial Markets", fin1)}</div>
+                    </div>
+
+                    <!-- SPREAD 3: Finance 2 & Back Cover (Sports) -->
+                    <div class="spread spread-back" id="spread-3">
+                        <div class="np-page left-page">${formatNewspaperSection("Financial Markets - Continued", fin2)}</div>
+                        <div class="np-page right-page back-cover">${formatNewspaperSection("Sports & Athletics", sport1)}</div>
+                    </div>
+                `;
+
+                currentSpread = 0;
+                totalSpreads = 4;
+                updatePagination();
+            } catch (err) {
+                viewer.innerHTML = `<div class="drop-placeholder" style="color: #e74c3c; margin-top: 100px;">Failed to print daily edition. Check connection.</div>`;
+            }
+        }
+
+        function turnPage(direction) {
+            document.getElementById(`spread-${currentSpread}`).classList.remove('active');
+            currentSpread += direction;
+            document.getElementById(`spread-${currentSpread}`).classList.add('active');
+            updatePagination();
+        }
+
+        function updatePagination() {
+            document.getElementById('prevPageBtn').style.display = currentSpread > 0 ? 'block' : 'none';
+            document.getElementById('nextPageBtn').style.display = currentSpread < (totalSpreads - 1) ? 'block' : 'none';
+        }
+
+        // --- VI. LIVE MARKETS LOGIC ---
+        function renderMarketColumn(title, items) {
+            let html = `<div class="market-col"><div class="market-header">${title}</div>`;
+            items.forEach(ticker => {
+                const isUp = ticker.change.includes('+');
+                const badgeClass = isUp ? 'ticker-up' : 'ticker-down';
+                html += `
+                    <div class="ticker-card">
+                        <div class="ticker-info">
+                            <span class="ticker-symbol">${ticker.symbol}</span>
+                            <span class="ticker-price">${ticker.price}</span>
+                        </div>
+                        <div class="ticker-badge ${badgeClass}">${ticker.change}</div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        async function fetchMarketData() {
+            try {
+                const response = await fetch('/market_data');
+                const data = await response.json();
+                
+                const feed = document.getElementById('marketFeed');
+                feed.innerHTML = 
+                    renderMarketColumn("Indian Markets", data.indian) +
+                    renderMarketColumn("Global Markets", data.international) +
+                    renderMarketColumn("Cryptocurrency", data.crypto);
+            } catch (err) {
+                document.getElementById('marketFeed').innerHTML = `<div class="drop-placeholder" style="grid-column: span 3; color:#8b0000;">Market data unavailable. Check server connection.</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
