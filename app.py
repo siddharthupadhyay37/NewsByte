@@ -26,7 +26,7 @@ st.set_page_config(page_title="News Archive AI", layout="centered")
 st.title("📰 News Archive AI (Powered by Cloud Gemma 4)")
 
 # Paste your actual Google AI Studio API key here!
-google_client = genai.Client(api_key="AQ.Ab8RN6IVYpSjqtA9Fqln5uBiElaRM0jnQ8RP8G6Q7Dx_k4y8Gw")
+google_client = genai.Client(api_key="Enter api key")
 
 tab1, tab2 = st.tabs(["Search Archives (Feed)", "Analyze & Compare (Chatbot)"])
 

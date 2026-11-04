@@ -36,7 +36,7 @@ collection = chroma_client.get_or_create_collection(
 chroma_lock = threading.Lock() # Prevents SQLite "database locked" crashes during parallel scraping
 
 # 2. AI Client
-google_client = genai.Client(api_key="AQ.Ab8RN6IVYpSjqtA9Fqln5uBiElaRM0jnQ8RP8G6Q7Dx_k4y8Gw")
+google_client = genai.Client(api_key="enterapikey")
 
 class SearchRequest(BaseModel):
     query: str
